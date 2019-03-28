@@ -1,0 +1,65 @@
+#!/system/bin/busybox ash
+
+# Data settings
+dataPath=/storage/emulated/0/Music/reg.data
+
+# Device settings
+i2cBus=5
+deviceAddress=0x48
+regStart=1
+regEnd=113
+
+# Simulate like linux driver check chip
+checkRegAddress=0x1e
+checkRegValue=0x40
+
+help() {
+    cmdName=`basename "$0"`
+    echo 
+    echo "==========================================="
+    echo "USAGE:"
+    echo "    1. ${cmdName} r: read all reg from 9268"
+    echo "    2. ${cmdName} w: write all reg to 9268"
+    echo "Info:"
+    echo "    current data path: ${dataPath}"
+    echo "==========================================="
+    echo 
+}
+
+data=`i2cget -f -y ${i2cBus} ${deviceAddress} ${checkRegAddress}`
+echo "address 0x1e check data: ${data}"
+
+if [ "${data}" != "${checkRegValue}" ]; then
+    echo "plz check i2c bus connect or chip power is on"
+    exit 1
+else
+    echo "chip is found"
+fi
+
+if ! [ $# -eq 1 ]; then
+    help
+    exit 2
+fi
+
+if [ "$1" == "r" ]; then
+    echo "start read data to reg.data"
+    printf "" > ${dataPath}
+    for i in $(seq ${regStart} ${regEnd}); do
+        data=`i2cget -f -y ${i2cBus} ${deviceAddress} ${i}`
+        printf "0x%x:%s\n" ${i} ${data}
+        printf "0x%x:%s\n" ${i} ${data} >> ${dataPath}
+    done
+    echo "end read data to reg.data"
+elif [ "$1" == "w" ]; then
+    echo "start write data from reg.data"
+    for line in $(cat ${dataPath}); do
+        address=$(echo "$line" | cut -f1 -d:)
+        value=$(echo "$line" | cut -f2 -d:)
+        echo $address:$value
+        i2cset -f -y ${i2cBus} ${deviceAddress} $address $value
+    done
+    echo "end write data from reg.data"
+else 
+    help
+fi
+
