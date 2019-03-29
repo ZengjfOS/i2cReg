@@ -1,0 +1,169 @@
+#!/system/bin/busybox ash
+
+# Data settings
+dataPath=/storage/emulated/0/Music/reg.data
+
+# Device settings
+i2cBus=5
+deviceAddress=0x48
+regBegin=0x1
+regEnd=0x71
+
+# Simulate like linux driver check chip
+checkRegAddress=0x1e
+checkRegValue=0x40
+
+# console print
+consolePrintReg=false
+
+readAllReg=false
+writeAllReg=false
+setGetReg=false
+
+help() {
+    cmdName=`basename "$0"`
+    echo 
+    echo "==========================================="
+    echo "Usage:"
+    echo "    -h|-?)"
+    echo "    -r)  read all register"
+    echo "    -w)  write alle register"
+    echo "    -s)  set/get register"
+    echo "    -p)  console print register"
+    echo "    -d)  device address"
+    echo "    -b)  register begin index"
+    echo "    -e)  register end index"
+    echo "    -c)  chip check register address"
+    echo "    -v)  chip check register value"
+    echo "    -f)  read/write data path"
+    echo "Info:"
+    echo "    current data path: ${dataPath}"
+    echo "==========================================="
+    echo 
+}
+
+if [ "$#" -eq 0 ]; then
+    help
+    exit 0
+fi
+
+# A POSIX variable
+OPTIND=1         # Reset in case getopts has been used previously in the shell.
+
+while getopts "h?rwspd:b:e:c:v:f:" opt; do
+    case "$opt" in
+    h|\?)
+        help
+        exit 0
+        ;;
+    r)  readAllReg=true
+        ;;
+    w)  writeAlleReg=true
+        ;;
+    s)  setGetReg=true
+        ;;
+    p)  consolePrintReg=true
+        ;;
+    d)  deviceAddress=$OPTARG
+        ;;
+    b)  regBegin=`printf "%d" $OPTARG`
+        ;;
+    e)  regEnd=`printf "%d" $OPTARG`
+        ;;
+    c)  checkRegAddress=$OPTARG
+        ;;
+    v)  checkRegValue=$OPTARG
+        ;;
+    f)  dataPath=$OPTARG
+        ;;
+    esac
+done
+
+echo
+echo "device Address: ${deviceAddress}"
+echo "reg Start: ${regBegin}"
+echo "reg End: ${regEnd}"
+echo "check reg Address: ${checkRegAddress}"
+echo "check reg Value: ${checkRegValue}"
+echo "current data path: ${dataPath}"
+echo "device Address: ${deviceAddress}"
+echo
+
+data=`i2cget -f -y ${i2cBus} ${deviceAddress} ${checkRegAddress}`
+echo "address 0x1e check data: ${data}"
+if [ "${data}" != "${checkRegValue}" ]; then
+    echo "plz check i2c bus connect or chip power is on"
+    exit 1
+else
+    echo "chip is found"
+fi
+
+if [ "${readAllReg}" == true ]; then
+    echo "--> start read data to reg.data"
+
+    printf "" > ${dataPath}
+    for i in $(seq `printf "%d" ${regBegin}` `printf "%d" ${regEnd}`); do
+        data=`i2cget -f -y ${i2cBus} ${deviceAddress} ${i}`
+
+        if [ "${consolePrintReg}" == true ]; then
+            printf "0x%x:%s\n" ${i} ${data}
+        fi
+        printf "0x%x:%s\n" ${i} ${data} >> ${dataPath}
+    done
+
+    echo "<-- end read data to reg.data"
+elif [ "${writAlleReg}" == true ]; then
+    echo "--> start write data from reg.data"
+
+    for line in $(cat ${dataPath}); do
+        address=$(echo "$line" | cut -f1 -d:)
+        value=$(echo "$line" | cut -f2 -d:)
+
+        if [ "${consolePrintReg}" == true ]; then
+            echo $address:$value
+        fi
+
+        i2cset -f -y ${i2cBus} ${deviceAddress} $address $value
+    done
+
+    echo "<-- end write data from reg.data"
+elif [ "${setGetReg}" == true ]; then
+    echo "--> start read/write a reg from/to device"
+
+    running=true
+
+    while [ "$running" == true ]; do
+        echo "---------------------------------"
+        read -p 'read/write/exit [r/w/e]: ' mode
+
+        if [ "$mode" == "r" ]; then
+            read -p 'address(hex, e.g., 1F): ' address
+
+            data=`i2cget -f -y ${i2cBus} ${deviceAddress} 0x${address}`
+            printf "0x%x:%s\n" 0x${address} ${data}
+        elif [ "$mode" == "w" ]; then
+            read -p 'address(hex, e.g., 1F): ' address
+            read -p 'value(hex, e.g., 1F): ' value
+
+            data=`i2cget -f -y ${i2cBus} ${deviceAddress} 0x${address}`
+            printf "----> write before: 0x%x:%s\n" 0x${address} ${data}
+
+            i2cset -f -y ${i2cBus} ${deviceAddress} 0x${address} 0x${value}
+            echo   "----  write:        0x${address}:0x${value}"
+
+            data=`i2cget -f -y ${i2cBus} ${deviceAddress} 0x${address}`
+            printf "<---- write after:  0x%x:%s\n" 0x${address} ${data}
+        elif [ "$mode" == "e" ]; then
+            running=false
+        else
+            echo "unsupport mode"
+        fi
+    done
+
+    echo "<-- end read/write a reg from/to device"
+else 
+    echo "unsupport command line type"
+
+    help
+fi
+

@@ -10,31 +10,24 @@ Android移植参考：[Android.mk](Android.mk)
 
 ## read/write连续地址数据脚本
 
-* 脚本程序：[i2cReg](i2cReg)
+* 脚本程序：[i2creg](i2creg)
 * 使用说明：
   ```
   ===========================================
   USAGE:
-      1. i2cReg -r: read all reg from device
-      2. i2cReg -w: write all reg to device
-      3. i2cReg -s: read/write  reg from/to device
+    -h|-?)
+    -r)  read all register
+    -w)  write alle register
+    -s)  set/get register
+    -p)  console print register
+    -d)  device address
+    -b)  register begin index
+    -e)  register end index
+    -c)  chip check register address
+    -v)  chip check register value
+    -f)  read/write data path
   Info:
       current data path: /storage/emulated/0/Music/reg.data
   ===========================================
   ```
-* 数据路径：修改[i2cReg](i2cReg)脚本中`dataPath`变量即可调整数据存储位置；
-* 其他参数配置，请修改[i2cReg](i2cReg)脚本对应位置：
-  ```shell
-  # Data settings
-  dataPath=/storage/emulated/0/Music/reg.data
-  
-  # Device settings
-  i2cBus=5
-  deviceAddress=0x48
-  regStart=1
-  regEnd=113
-  
-  # Simulate like linux driver check chip
-  checkRegAddress=0x1e
-  checkRegValue=0x40
-  ```
+* 数据路径：修改[i2creg](i2creg)脚本中`dataPath`变量即可调整数据存储位置；
