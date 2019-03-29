@@ -15,8 +15,9 @@ Android移植参考：[Android.mk](Android.mk)
   ```
   ===========================================
   USAGE:
-      1. i2cReg r: read all reg from 9268
-      2. i2cReg w: write all reg to 9268
+      1. i2cReg -r: read all reg from device
+      2. i2cReg -w: write all reg to device
+      3. i2cReg -s: read/write  reg from/to device
   Info:
       current data path: /storage/emulated/0/Music/reg.data
   ===========================================
