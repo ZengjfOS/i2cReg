@@ -19,6 +19,7 @@ consolePrintReg=false
 readAllReg=false
 writeAllReg=false
 setGetReg=false
+checkChip=false
 
 help() {
     cmdName=`basename "$0"`
@@ -26,16 +27,18 @@ help() {
     echo "==========================================="
     echo "Usage:"
     echo "    -h|-?)"
-    echo "    -r)  read all register"
-    echo "    -w)  write alle register"
+    echo "    -r)  read all registers"
+    echo "    -w)  write all registers"
     echo "    -s)  set/get register"
     echo "    -p)  console print register"
+    echo "    -c)  check chip exist"
     echo "    -d)  device address"
-    echo "    -b)  register begin index"
-    echo "    -e)  register end index"
-    echo "    -c)  chip check register address"
+    echo "    -b)  read/write all registers begin index"
+    echo "    -e)  read/write all registers end index"
+    echo "    -a)  chip check register address"
     echo "    -v)  chip check register value"
     echo "    -f)  read/write data path"
+    echo "    -i)  i2c bus index"
     echo "Info:"
     echo "    current data path: ${dataPath}"
     echo "==========================================="
@@ -50,7 +53,7 @@ fi
 # A POSIX variable
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 
-while getopts "h?rwspd:b:e:c:v:f:" opt; do
+while getopts "h?rwspcd:b:e:a:v:f:i:" opt; do
     case "$opt" in
     h|\?)
         help
@@ -58,44 +61,50 @@ while getopts "h?rwspd:b:e:c:v:f:" opt; do
         ;;
     r)  readAllReg=true
         ;;
-    w)  writeAlleReg=true
+    w)  writeAllReg=true
         ;;
     s)  setGetReg=true
         ;;
     p)  consolePrintReg=true
         ;;
-    d)  deviceAddress=$OPTARG
+    c)  checkChip=true
+        ;;
+    d)  deviceAddress=0x`printf "%x" $OPTARG`
         ;;
     b)  regBegin=`printf "%d" $OPTARG`
         ;;
     e)  regEnd=`printf "%d" $OPTARG`
         ;;
-    c)  checkRegAddress=$OPTARG
+    a)  checkRegAddress=0x`printf "%x" $OPTARG`
         ;;
-    v)  checkRegValue=$OPTARG
+    v)  checkRegValue=0x`printf "%x" $OPTARG`
         ;;
     f)  dataPath=$OPTARG
+        ;;
+    i)  i2cBus=`printf "%d" $OPTARG`
         ;;
     esac
 done
 
 echo
+echo "i2c bus index: ${i2cBus}"
 echo "device Address: ${deviceAddress}"
 echo "reg Start: ${regBegin}"
 echo "reg End: ${regEnd}"
 echo "check reg Address: ${checkRegAddress}"
 echo "check reg Value: ${checkRegValue}"
 echo "current data path: ${dataPath}"
-echo "device Address: ${deviceAddress}"
 echo
 
-data=`i2cget -f -y ${i2cBus} ${deviceAddress} ${checkRegAddress}`
-echo "address 0x1e check data: ${data}"
-if [ "${data}" != "${checkRegValue}" ]; then
-    echo "plz check i2c bus connect or chip power is on"
-    exit 1
-else
-    echo "chip is found"
+if [ "${checkChip}" == true ]; then
+    data=`i2cget -f -y ${i2cBus} ${deviceAddress} ${checkRegAddress}`
+    echo "address 0x1e check data: ${data}"
+    if [ "${data}" != "${checkRegValue}" ]; then
+        echo "plz check i2c bus connect or chip power is on"
+        exit 1
+    else
+        echo "chip is found"
+    fi
 fi
 
 if [ "${readAllReg}" == true ]; then
@@ -112,7 +121,7 @@ if [ "${readAllReg}" == true ]; then
     done
 
     echo "<-- end read data to reg.data"
-elif [ "${writAlleReg}" == true ]; then
+elif [ "${writeAllReg}" == true ]; then
     echo "--> start write data from reg.data"
 
     for line in $(cat ${dataPath}); do
