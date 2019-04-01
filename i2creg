@@ -61,7 +61,7 @@ while getopts "h?rwspcd:b:e:a:v:f:i:" opt; do
         ;;
     r)  readAllReg=true
         ;;
-    w)  writeAlleReg=true
+    w)  writeAllReg=true
         ;;
     s)  setGetReg=true
         ;;
@@ -121,7 +121,7 @@ if [ "${readAllReg}" == true ]; then
     done
 
     echo "<-- end read data to reg.data"
-elif [ "${writAlleReg}" == true ]; then
+elif [ "${writeAllReg}" == true ]; then
     echo "--> start write data from reg.data"
 
     for line in $(cat ${dataPath}); do
@@ -143,7 +143,10 @@ elif [ "${setGetReg}" == true ]; then
 
     while [ "$running" == true ]; do
         echo "---------------------------------"
-        read -p 'read/write/exit [r/w/e]: ' mode
+        echo "i2c bus: ${i2cBus}"
+        echo "device address: ${deviceAddress}"
+        read -p 'read/write/exit/i2c-bus/device [r/w/e/i/d]: ' mode
+        echo "current mode: ${mode}"
 
         if [ "$mode" == "r" ]; then
             read -p 'address(hex, e.g., 1F): ' address
@@ -164,6 +167,12 @@ elif [ "${setGetReg}" == true ]; then
             printf "<---- write after:  0x%x:%s\n" 0x${address} ${data}
         elif [ "$mode" == "e" ]; then
             running=false
+        elif [ "$mode" == "i" ]; then
+            read -p 'i2c bus(hex, e.g., 1F): ' value
+            i2cBus=0x${value}
+        elif [ "$mode" == "d" ]; then
+            read -p 'device address(hex, e.g., 1F): ' value
+            deviceAddress=0x${value}
         else
             echo "unsupport mode"
         fi
