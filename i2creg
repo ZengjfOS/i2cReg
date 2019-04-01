@@ -4,7 +4,7 @@
 dataPath=/storage/emulated/0/Music/reg.data
 
 # Device settings
-i2cBus=5
+i2cBus=0x5
 deviceAddress=0x48
 regBegin=0x1
 regEnd=0x71
@@ -71,9 +71,9 @@ while getopts "h?rwspcd:b:e:a:v:f:i:" opt; do
         ;;
     d)  deviceAddress=0x`printf "%x" $OPTARG`
         ;;
-    b)  regBegin=`printf "%d" $OPTARG`
+    b)  regBegin=0x`printf "%x" $OPTARG`
         ;;
-    e)  regEnd=`printf "%d" $OPTARG`
+    e)  regEnd=0x`printf "%x" $OPTARG`
         ;;
     a)  checkRegAddress=0x`printf "%x" $OPTARG`
         ;;
@@ -81,7 +81,7 @@ while getopts "h?rwspcd:b:e:a:v:f:i:" opt; do
         ;;
     f)  dataPath=$OPTARG
         ;;
-    i)  i2cBus=`printf "%d" $OPTARG`
+    i)  i2cBus=0x`printf "%d" $OPTARG`
         ;;
     esac
 done
@@ -111,7 +111,7 @@ if [ "${readAllReg}" == true ]; then
     echo "--> start read data to reg.data"
 
     printf "" > ${dataPath}
-    for i in $(seq `printf "%d" ${regBegin}` `printf "%d" ${regEnd}`); do
+    for i in $(seq ${regBegin} ${regEnd}); do
         data=`i2cget -f -y ${i2cBus} ${deviceAddress} ${i}`
 
         if [ "${consolePrintReg}" == true ]; then
