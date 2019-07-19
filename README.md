@@ -6,11 +6,17 @@ https://mirrors.edge.kernel.org/pub/software/utils/i2c-tools/i2c-tools-4.1.tar.x
 
 ## Android
 
-Android移植参考：[Android.mk](Android.mk)
+Android移植参考：[Android.mk](i2c-tools/Android.mk)
+
+## YOCTO
+
+`local.conf`中添加`i2c-tools`即可
 
 ## 说明
 
-* 脚本程序：[i2creg](i2creg)
+* 脚本程序：
+  * [i2creg for Android](i2creg_Android)
+  * [i2creg for Linux](i2creg_Linux)
 * 使用说明：
   ```
   ===========================================
